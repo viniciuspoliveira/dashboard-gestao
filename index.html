@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gestão de Melhorias & Chamados</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Login Screen Styles */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 100%;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header .logo {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .login-header h1 {
+            color: #2d3748;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #718096;
+            font-size: 1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .credentials-info {
+            background: #e6fffa;
+            border: 2px solid #81e6d9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .credentials-info h3 {
+            color: #234e52;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        .credentials-info .credential-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .credentials-info .credential-item strong {
+            color: #2d3748;
+        }
+
+        .credentials-info .credential-item code {
+            background: #f7fafc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #667eea;
+            font-family: monospace;
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            display: none;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-content h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header-content p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-badge.viewer {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .manage-users-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .manage-users-btn:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .logout-btn {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .stat-card .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card.melhorias .icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card.chamados .icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card.criticos .icon {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .stat-card.fechados .icon {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+
+        .stat-card.usuarios .icon {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        }
+
+        .stat-card h3 {
+            color: #2d3748;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #718096;
+            font-size: 0.95em;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .card-header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header .icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-right: 15px;
+        }
+
+        .card-header h2 {
+            color: #2d3748;
+            font-size: 1.5em;
+        }
+
+        .add-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background: #38a169;
+            transform: scale(1.05);
+        }
+
+        .improvement-item, .ticket-item {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .ticket-item {
+            background: #f7fafc;
+            border-left-color: #f5576c;
+        }
+
+        .improvement-item:hover, .ticket-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .ticket-item.closed {
+            opacity: 0.7;
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .client-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .improvement-item h4, .ticket-item h4 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .improvement-item ul {
+            margin-left: 20px;
+            color: #4a5568;
+        }
+
+        .improvement-item li {
+            margin-bottom: 6px;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: none;
+            gap: 5px;
+        }
+
+        .improvement-item:hover .action-buttons,
+        .ticket-item:hover .action-buttons {
+            display: flex;
+        }
+
+        .edit-btn, .delete-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn {
+            background: #fc8181;
+        }
+
+        .edit-btn:hover {
+            background: #3182ce;
+            transform: scale(1.1);
+        }
+
+        .delete-btn:hover {
+            background: #e53e3e;
+            transform: scale(1.1);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .ticket-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1.05em;
+        }
+
+        .ticket-phone {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .ticket-issue {
+            color: #4a5568;
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin-top: 8px;
+        }
+
+        .date-info {
+            color: #718096;
+            font-size: 0.85em;
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .date-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .ticket-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .status-btn.close {
+            background: #48bb78;
+            color: white;
+        }
+
+        .status-btn.close:hover {
+            background: #38a169;
+        }
+
+        .status-btn.reopen {
+            background: #ed8936;
+            color: white;
+        }
+
+        .status-btn.reopen:hover {
+            background: #dd6b20;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .priority-high {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .priority-medium {
+            background: #feebc8;
+            color: #c05621;
+        }
+
+        .priority-low {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status-closed {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .modal-header h2 {
+            color: #2d3748;
+            font-size: 1.8em;
+        }
+
+        .close {
+            color: #a0aec0;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #2d3748;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .user-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .user-item {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-item-info h4 {
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .user-item-info p {
+            color: #718096;
+            font-size: 0.9em;
+        }
+
+        .user-role-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .user-role-badge.viewer {
+            background: #48bb78;
+        }
+
+        .delete-user-btn {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .delete-user-btn:hover {
+            background: #e53e3e;
+        }
+
+        .footer {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: #718096;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .admin-only {
+            display: none;
+        }
+
+        .client-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .client-tag {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .client-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .client-tag .remove:hover {
+            color: #fc8181;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+        }
+
+        /* Charts Section */
+        .charts-section {
+            margin-top: 30px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo">🔐</div>
+                <h1>Login Dashboard</h1>
+                <p>Sistema de Gestão de Melhorias & Chamados</p>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Usuário</label>
+                    <input type="text" id="username" required placeholder="Digite seu usuário" autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="password" required placeholder="Digite sua senha" autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="login-btn">🚀 Entrar</button>
+            </form>
+
+            <div class="credentials-info">
+                <h3>📋 Credenciais de Acesso</h3>
+                <div class="credential-item">
+                    <strong>👨‍💼 Admin:</strong> <code>admin</code> / <code>admin123</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <div class="header">
+            <div class="header-content">
+                <h1>📊 Dashboard de Gestão</h1>
+                <p>Melhorias & Chamados | Atualizado em tempo real</p>
+            </div>
+            <div class="header-actions">
+                <button class="manage-users-btn admin-only" onclick="openUserManagementModal()">
+                    👥 Gerenciar Usuários
+                </button>
+                <div class="user-info">
+                    <div id="userBadge" class="user-badge">
+                        <span id="userIcon">👨‍💼</span>
+                        <span id="userName"></span>
+                    </div>
+                    <button class="logout-btn" onclick="handleLogout()">🚪 Sair</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card melhorias">
+                <div class="icon">✨</div>
+                <h3 id="stat-melhorias">0</h3>
+                <p>Melhorias Solicitadas</p>
+            </div>
+            <div class="stat-card chamados">
+                <div class="icon">🎫</div>
+                <h3 id="stat-chamados-abertos">0</h3>
+                <p>Chamados Abertos</p>
+            </div>
+            <div class="stat-card criticos">
+                <div class="icon">⚠️</div>
+                <h3 id="stat-criticos">0</h3>
+                <p>Casos Críticos</p>
+            </div>
+            <div class="stat-card fechados">
+                <div class="icon">✅</div>
+                <h3 id="stat-fechados">0</h3>
+                <p>Chamados Fechados</p>
+            </div>
+            <div class="stat-card usuarios admin-only">
+                <div class="icon">👥</div>
+                <h3 id="stat-usuarios">0</h3>
+                <p>Usuários Cadastrados</p>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <div class="icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            💡
+                        </div>
+                        <h2>Melhorias de Produto</h2>
+                    </div>
+                    <button class="add-btn admin-only" onclick="openImprovementModal()">
+                        + Adicionar
+                    </button>
+                </div>
+                <div id="improvements-container"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <div class="icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            🎫
+                        </div>
+                        <h2>Chamados</h2>
+                    </div>
+                    <button class="add-btn admin-only" onclick="openTicketModal()">
+                        + Adicionar
+                    </button>
+                </div>
+
+                <div class="filter-tabs">
+                    <div class="filter-tab active" onclick="filterTickets('all')">Todos (<span id="count-all">0</span>)</div>
+                    <div class="filter-tab" onclick="filterTickets('open')">Abertos (<span id="count-open">0</span>)</div>
+                    <div class="filter-tab" onclick="filterTickets('critical')">Críticos (<span id="count-critical">0</span>)</div>
+                    <div class="filter-tab" onclick="filterTickets('closed')">Fechados (<span id="count-closed">0</span>)</div>
+                </div>
+
+                <div id="tickets-container"></div>
+            </div>
+        </div>
+
+        <!-- Analytics Charts Section -->
+        <div class="charts-section">
+            <div class="card" style="margin-bottom: 30px;">
+                <h2 style="color: #2d3748; margin-bottom: 20px; font-size: 1.8em;">📈 Análises e Estatísticas</h2>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>🏢 Clientes com Mais Chamados</h3>
+                    <div class="chart-container">
+                        <canvas id="clientChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>⏱️ Tempo Médio de Resolução</h3>
+                    <div class="chart-container">
+                        <canvas id="resolutionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>📊 Status dos Chamados</h3>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>🎯 Prioridade dos Chamados</h3>
+                    <div class="chart-container">
+                        <canvas id="priorityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Dashboard gerado automaticamente • Última atualização: <span id="last-update"></span></p>
+        </div>
+    </div>
+
+    <!-- Modal Gerenciar Usuários -->
+    <div id="userManagementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>👥 Gerenciar Usuários</h2>
+                <span class="close" onclick="closeUserManagementModal()">&times;</span>
+            </div>
+            
+            <form id="newUserForm" onsubmit="addUser(event)">
+                <h3 style="color: #2d3748; margin-bottom: 20px;">Adicionar Novo Usuário</h3>
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="new-user-name" required placeholder="Ex: João Silva">
+                </div>
+                <div class="form-group">
+                    <label>Usuário (login)</label>
+                    <input type="text" id="new-user-username" required placeholder="Ex: joao.silva">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="new-user-password" required placeholder="Mínimo 6 caracteres" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Acesso</label>
+                    <select id="new-user-role" required>
+                        <option value="admin">Administrador (Acesso Total)</option>
+                        <option value="viewer" selected>Visualizador (Apenas Leitura)</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">➕ Cadastrar Usuário</button>
+            </form>
+
+            <div class="user-list" id="userList"></div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar/Editar Melhoria -->
+    <div id="improvementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="improvementModalTitle">➕ Nova Melhoria</h2>
+                <span class="close" onclick="closeImprovementModal()">&times;</span>
+            </div>
+            <form id="improvementForm" onsubmit="saveImprovement(event)">
+                <input type="hidden" id="improvement-id">
+                <div class="form-group">
+                    <label>Cliente(s)</label>
+                    <input type="text" id="improvement-client" placeholder="Digite o nome do cliente e pressione Enter" onkeypress="handleClientKeyPress(event, 'improvement')">
+                    <div class="client-tags" id="improvement-clients"></div>
+                </div>
+                <div class="form-group">
+                    <label>Título da Melhoria</label>
+                    <input type="text" id="improvement-title" required placeholder="Ex: Gestão de Vídeos">
+                </div>
+                <div class="form-group">
+                    <label>Descrição (uma por linha)</label>
+                    <textarea id="improvement-description" required placeholder="Ex: Possibilidade de escolher thumbnail&#10;Opção de ocultar uploader"></textarea>
+                </div>
+                <button type="submit" class="submit-btn" id="improvementSubmitBtn">Adicionar Melhoria</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar/Editar Chamado -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="ticketModalTitle">🎫 Novo Chamado</h2>
+                <span class="close" onclick="closeTicketModal()">&times;</span>
+            </div>
+            <form id="ticketForm" onsubmit="saveTicket(event)">
+                <input type="hidden" id="ticket-id">
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <input type="text" id="ticket-client" required placeholder="Ex: Empresa XYZ">
+                </div>
+                <div class="form-group">
+                    <label>Nome do Contato</label>
+                    <input type="text" id="ticket-name" required placeholder="Ex: Anderson Brito">
+                </div>
+                <div class="form-group">
+                    <label>Telefone (opcional)</label>
+                    <input type="text" id="ticket-phone" placeholder="Ex: +55 27 99999-9999">
+                </div>
+                <div class="form-group">
+                    <label>Descrição do Problema</label>
+                    <textarea id="ticket-issue" required placeholder="Ex: Certificado emitido com nome incorreto"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Prioridade</label>
+                    <select id="ticket-priority" required>
+                        <option value="critical">Alta (Crítico)</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="low">Baixa</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn" id="ticketSubmitBtn">Adicionar Chamado</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initial Data
+        const INITIAL_DATA = {
+            users: {
+                'admin': {
+                    password: 'admin123',
+                    role: 'admin',
+                    name: 'Administrador'
+                }
+            },
+            improvements: [
+                {
+                    id: 1,
+                    clients: ['Cliente A', 'Cliente B'],
+                    title: '🎬 Gestão de Vídeos',
+                    items: [
+                        'Possibilidade de escolher a thumbnail dos vídeos',
+                        'Opção de ocultar quem fez upload de arquivos'
+                    ]
+                },
+                {
+                    id: 2,
+                    clients: ['Cliente A'],
+                    title: '📈 Histórico de Interações',
+                    items: [
+                        'Histórico semanal de usuário separado por:',
+                        '• Curtidas',
+                        '• Comentários',
+                        '• Visualizações'
+                    ]
+                }
+            ],
+            tickets: [
+                {
+                    id: 1,
+                    client: 'Cliente A',
+                    name: 'Anderson Brito',
+                    phone: '',
+                    issue: '🏆 Certificado emitido com nome de outro pintor',
+                    priority: 'critical',
+                    status: 'open',
+                    openDate: new Date(2026, 0, 5).toISOString(),
+                    closeDate: null
+                },
+                {
+                    id: 2,
+                    client: 'Cliente B',
+                    name: 'Alex Miranda',
+                    phone: '',
+                    issue: '💳 Compras efetuadas não aparecem no histórico',
+                    priority: 'critical',
+                    status: 'open',
+                    openDate: new Date(2026, 0, 8).toISOString(),
+                    closeDate: null
+                },
+                {
+                    id: 3,
+                    client: 'Cliente A',
+                    name: 'João Silva',
+                    phone: '+55 27 99999-9999',
+                    issue: '📱 Problema ao acessar postagens',
+                    priority: 'medium',
+                    status: 'closed',
+                    openDate: new Date(2026, 0, 3).toISOString(),
+                    closeDate: new Date(2026, 0, 10).toISOString()
+                }
+            ]
+        };
+
+        // Application State
+        let users = {};
+        let currentUser = null;
+        let improvements = [];
+        let tickets = [];
+        let currentFilter = 'all';
+        let improvementClients = [];
+        let editingImprovementId = null;
+        let editingTicketId = null;
+
+        // Charts
+        let clientChart, resolutionChart, statusChart, priorityChart;
+
+        // Initialize
+        function init() {
+            loadFromLocalStorage();
+            checkSession();
+        }
+
+        // Session Management
+        function checkSession() {
+            const session = localStorage.getItem('userSession');
+            if (session) {
+                currentUser = JSON.parse(session);
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            
+            if (currentUser.role === 'admin') {
+                document.getElementById('userIcon').textContent = '👨‍💼';
+                document.getElementById('userBadge').classList.remove('viewer');
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    if (el.tagName === 'BUTTON' || el.classList.contains('stat-card')) {
+                        el.style.display = 'block';
+                    } else {
+                        el.style.display = 'flex';
+                    }
+                });
+            } else {
+                document.getElementById('userIcon').textContent = '👁️';
+                document.getElementById('userBadge').classList.add('viewer');
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            }
+            
+            renderImprovements();
+            renderTickets();
+            updateStats();
+            updateLastUpdate();
+            renderCharts();
+        }
+
+        // Login Handler
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            const user = users[username];
+            
+            if (!user) {
+                errorMessage.textContent = '❌ Usuário não encontrado!';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            if (user.password !== password) {
+                errorMessage.textContent = '❌ Senha incorreta!';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            currentUser = {
+                username: username,
+                name: user.name,
+                role: user.role
+            };
+            
+            localStorage.setItem('userSession', JSON.stringify(currentUser));
+            errorMessage.style.display = 'none';
+            showDashboard();
+        }
+
+        // Logout Handler
+        function handleLogout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                localStorage.removeItem('userSession');
+                currentUser = null;
+                showLogin();
+                document.getElementById('loginForm').reset();
+            }
+        }
+
+        // Local Storage
+        function saveToLocalStorage() {
+            localStorage.setItem('dashboard_improvements', JSON.stringify(improvements));
+            localStorage.setItem('dashboard_tickets', JSON.stringify(tickets));
+            localStorage.setItem('dashboard_users', JSON.stringify(users));
+        }
+
+        function loadFromLocalStorage() {
+            const savedImprovements = localStorage.getItem('dashboard_improvements');
+            const savedTickets = localStorage.getItem('dashboard_tickets');
+            const savedUsers = localStorage.getItem('dashboard_users');
+            
+            if (!savedUsers) {
+                users = INITIAL_DATA.users;
+                improvements = INITIAL_DATA.improvements;
+                tickets = INITIAL_DATA.tickets;
+                saveToLocalStorage();
+            } else {
+                users = JSON.parse(savedUsers);
+                improvements = savedImprovements ? JSON.parse(savedImprovements) : [];
+                tickets = savedTickets ? JSON.parse(savedTickets) : [];
+            }
+        }
+
+        // User Management
+        function openUserManagementModal() {
+            if (currentUser.role !== 'admin') return;
+            document.getElementById('userManagementModal').style.display = 'block';
+            renderUserList();
+        }
+
+        function closeUserManagementModal() {
+            document.getElementById('userManagementModal').style.display = 'none';
+            document.getElementById('newUserForm').reset();
+        }
+
+        function addUser(event) {
+            event.preventDefault();
+            
+            if (currentUser.role !== 'admin') return;
+            
+            const name = document.getElementById('new-user-name').value;
+            const username = document.getElementById('new-user-username').value;
+            const password = document.getElementById('new-user-password').value;
+            const role = document.getElementById('new-user-role').value;
+            
+            if (users[username]) {
+                alert('❌ Este nome de usuário já existe!');
+                return;
+            }
+            
+            users[username] = {
+                password: password,
+                role: role,
+                name: name
+            };
+            
+            saveToLocalStorage();
+            renderUserList();
+            updateStats();
+            document.getElementById('newUserForm').reset();
+            alert('✅ Usuário cadastrado com sucesso!');
+        }
+
+        function renderUserList() {
+            const container = document.getElementById('userList');
+            container.innerHTML = '<h3 style="color: #2d3748; margin: 30px 0 15px 0;">Usuários Cadastrados</h3>';
+            
+            Object.keys(users).forEach(username => {
+                const user = users[username];
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                div.innerHTML = `
+                    <div class="user-item-info">
+                        <h4>${user.name}</h4>
+                        <p>@${username}</p>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span class="user-role-badge ${user.role === 'viewer' ? 'viewer' : ''}">${user.role === 'admin' ? '👨‍💼 Admin' : '👁️ Visualizador'}</span>
+                        ${username !== 'admin' && username !== currentUser.username ? `<button class="delete-user-btn" onclick="deleteUser('${username}')">🗑️ Excluir</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function deleteUser(username) {
+            if (currentUser.role !== 'admin') return;
+            if (username === 'admin') {
+                alert('❌ O usuário admin não pode ser excluído!');
+                return;
+            }
+            if (username === currentUser.username) {
+                alert('❌ Você não pode excluir seu próprio usuário!');
+                return;
+            }
+            
+            if (confirm(`Tem certeza que deseja excluir o usuário ${users[username].name}?`)) {
+                delete users[username];
+                saveToLocalStorage();
+                renderUserList();
+                updateStats();
+            }
+        }
+
+        // Client Management
+        function handleClientKeyPress(event, type) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const input = document.getElementById(`${type}-client`);
+                const value = input.value.trim();
+                
+                if (value) {
+                    if (!improvementClients.includes(value)) {
+                        improvementClients.push(value);
+                        renderClientTags('improvement');
+                    }
+                    input.value = '';
+                }
+            }
+        }
+
+        function renderClientTags(type) {
+            const container = document.getElementById(`${type}-clients`);
+            container.innerHTML = '';
+            
+            improvementClients.forEach((client, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'client-tag';
+                tag.innerHTML = `
+                    <span>${client}</span>
+                    <span class="remove" onclick="removeClient(${index}, '${type}')">×</span>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        function removeClient(index, type) {
+            improvementClients.splice(index, 1);
+            renderClientTags('improvement');
+        }
+
+        // Improvement Functions
+        function openImprovementModal(id = null) {
+            if (currentUser.role !== 'admin') return;
+            
+            editingImprovementId = id;
+            improvementClients = [];
+            
+            if (id) {
+                const improvement = improvements.find(i => i.id === id);
+                if (improvement) {
+                    document.getElementById('improvementModalTitle').textContent = '✏️ Editar Melhoria';
+                    document.getElementById('improvementSubmitBtn').textContent = 'Salvar Alterações';
+                    document.getElementById('improvement-id').value = improvement.id;
+                    document.getElementById('improvement-title').value = improvement.title;
+                    document.getElementById('improvement-description').value = improvement.items.join('\n');
+                    improvementClients = [...improvement.clients];
+                    renderClientTags('improvement');
+                }
+            } else {
+                document.getElementById('improvementModalTitle').textContent = '➕ Nova Melhoria';
+                document.getElementById('improvementSubmitBtn').textContent = 'Adicionar Melhoria';
+                document.getElementById('improvementForm').reset();
+                renderClientTags('improvement');
+            }
+            
+            document.getElementById('improvementModal').style.display = 'block';
+        }
+
+        function closeImprovementModal() {
+            document.getElementById('improvementModal').style.display = 'none';
+            document.getElementById('improvementForm').reset();
+            improvementClients = [];
+            editingImprovementId = null;
+            renderClientTags('improvement');
+        }
+
+        function saveImprovement(event) {
+            event.preventDefault();
+            
+            if (currentUser.role !== 'admin') return;
+            
+            if (improvementClients.length === 0) {
+                alert('❌ Adicione pelo menos um cliente!');
+                return;
+            }
+            
+            const title = document.getElementById('improvement-title').value;
+            const description = document.getElementById('improvement-description').value;
+            const items = description.split('\n').filter(item => item.trim() !== '');
+            
+            if (editingImprovementId) {
+                // Edit existing
+                const improvement = improvements.find(i => i.id === editingImprovementId);
+                if (improvement) {
+                    improvement.clients = [...improvementClients];
+                    improvement.title = title;
+                    improvement.items = items;
+                }
+            } else {
+                // Add new
+                const newImprovement = {
+                    id: improvements.length > 0 ? Math.max(...improvements.map(i => i.id)) + 1 : 1,
+                    clients: [...improvementClients],
+                    title: title,
+                    items: items
+                };
+                improvements.push(newImprovement);
+            }
+            
+            saveToLocalStorage();
+            renderImprovements();
+            updateStats();
+            updateLastUpdate();
+            closeImprovementModal();
+        }
+
+        function deleteImprovement(id) {
+            if (currentUser.role !== 'admin') return;
+            
+            if (confirm('Tem certeza que deseja excluir esta melhoria?')) {
+                improvements = improvements.filter(i => i.id !== id);
+                saveToLocalStorage();
+                renderImprovements();
+                updateStats();
+                updateLastUpdate();
+            }
+        }
+
+        function renderImprovements() {
+            const container = document.getElementById('improvements-container');
+            container.innerHTML = '';
+            
+            if (improvements.length === 0) {
+                container.innerHTML = '<div class="empty-state">Nenhuma melhoria cadastrada ainda. Use o botão "Adicionar" para criar uma.</div>';
+                return;
+            }
+            
+            improvements.forEach(improvement => {
+                const div = document.createElement('div');
+                div.className = 'improvement-item';
+                div.innerHTML = `
+                    ${currentUser && currentUser.role === 'admin' ? `
+                    <div class="action-buttons admin-only">
+                        <button class="edit-btn" onclick="openImprovementModal(${improvement.id})" title="Editar">✏️</button>
+                        <button class="delete-btn" onclick="deleteImprovement(${improvement.id})" title="Excluir">×</button>
+                    </div>
+                    ` : ''}
+                    <div style="margin-bottom: 10px;">
+                        ${improvement.clients.map(client => `<span class="client-badge">${client}</span>`).join('')}
+                    </div>
+                    <h4>${improvement.title}</h4>
+                    <ul>
+                        ${improvement.items.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Ticket Functions
+        function openTicketModal(id = null) {
+            if (currentUser.role !== 'admin') return;
+            
+            editingTicketId = id;
+            
+            if (id) {
+                const ticket = tickets.find(t => t.id === id);
+                if (ticket) {
+                    document.getElementById('ticketModalTitle').textContent = '✏️ Editar Chamado';
+                    document.getElementById('ticketSubmitBtn').textContent = 'Salvar Alterações';
+                    document.getElementById('ticket-id').value = ticket.id;
+                    document.getElementById('ticket-client').value = ticket.client;
+                    document.getElementById('ticket-name').value = ticket.name;
+                    document.getElementById('ticket-phone').value = ticket.phone;
+                    document.getElementById('ticket-issue').value = ticket.issue;
+                    document.getElementById('ticket-priority').value = ticket.priority;
+                }
+            } else {
+                document.getElementById('ticketModalTitle').textContent = '🎫 Novo Chamado';
+                document.getElementById('ticketSubmitBtn').textContent = 'Adicionar Chamado';
+                document.getElementById('ticketForm').reset();
+            }
+            
+            document.getElementById('ticketModal').style.display = 'block';
+        }
+
+        function closeTicketModal() {
+            document.getElementById('ticketModal').style.display = 'none';
+            document.getElementById('ticketForm').reset();
+            editingTicketId = null;
+        }
+
+        function saveTicket(event) {
+            event.preventDefault();
+            
+            if (currentUser.role !== 'admin') return;
+            
+            const client = document.getElementById('ticket-client').value;
+            const name = document.getElementById('ticket-name').value;
+            const phone = document.getElementById('ticket-phone').value;
+            const issue = document.getElementById('ticket-issue').value;
+            const priority = document.getElementById('ticket-priority').value;
+            
+            if (editingTicketId) {
+                // Edit existing
+                const ticket = tickets.find(t => t.id === editingTicketId);
+                if (ticket) {
+                    ticket.client = client;
+                    ticket.name = name;
+                    ticket.phone = phone;
+                    ticket.issue = issue;
+                    ticket.priority = priority;
+                }
+            } else {
+                // Add new
+                const newTicket = {
+                    id: tickets.length > 0 ? Math.max(...tickets.map(t => t.id)) + 1 : 1,
+                    client: client,
+                    name: name,
+                    phone: phone,
+                    issue: issue,
+                    priority: priority,
+                    status: 'open',
+                    openDate: new Date().toISOString(),
+                    closeDate: null
+                };
+                tickets.push(newTicket);
+            }
+            
+            saveToLocalStorage();
+            renderTickets();
+            updateStats();
+            updateLastUpdate();
+            renderCharts();
+            closeTicketModal();
+        }
+
+        function deleteTicket(id) {
+            if (currentUser.role !== 'admin') return;
+            
+            if (confirm('Tem certeza que deseja excluir este chamado?')) {
+                tickets = tickets.filter(t => t.id !== id);
+                saveToLocalStorage();
+                renderTickets();
+                updateStats();
+                updateLastUpdate();
+                renderCharts();
+            }
+        }
+
+        function closeTicket(id) {
+            if (currentUser.role !== 'admin') return;
+            
+            const ticket = tickets.find(t => t.id === id);
+            if (ticket) {
+                ticket.status = 'closed';
+                ticket.closeDate = new Date().toISOString();
+                saveToLocalStorage();
+                renderTickets();
+                updateStats();
+                updateLastUpdate();
+                renderCharts();
+            }
+        }
+
+        function reopenTicket(id) {
+            if (currentUser.role !== 'admin') return;
+            
+            const ticket = tickets.find(t => t.id === id);
+            if (ticket) {
+                ticket.status = 'open';
+                ticket.closeDate = null;
+                saveToLocalStorage();
+                renderTickets();
+                updateStats();
+                updateLastUpdate();
+                renderCharts();
+            }
+        }
+
+        function renderTickets() {
+            const container = document.getElementById('tickets-container');
+            container.innerHTML = '';
+            
+            let filteredTickets = tickets;
+            
+            if (currentFilter === 'open') {
+                filteredTickets = tickets.filter(t => t.status === 'open');
+            } else if (currentFilter === 'closed') {
+                filteredTickets = tickets.filter(t => t.status === 'closed');
+            } else if (currentFilter === 'critical') {
+                filteredTickets = tickets.filter(t => t.priority === 'critical' && t.status === 'open');
+            }
+            
+            if (filteredTickets.length === 0) {
+                container.innerHTML = '<div class="empty-state">Nenhum chamado encontrado nesta categoria.</div>';
+                return;
+            }
+            
+            filteredTickets.forEach(ticket => {
+                const div = document.createElement('div');
+                div.className = `ticket-item ${ticket.status === 'closed' ? 'closed' : ''}`;
+                
+                const priorityClass = ticket.status === 'closed' ? 'status-closed' : 
+                                     ticket.priority === 'critical' ? 'priority-high' :
+                                     ticket.priority === 'medium' ? 'priority-medium' : 'priority-low';
+                
+                const priorityText = ticket.status === 'closed' ? 'FECHADO' :
+                                    ticket.priority === 'critical' ? 'ALTA PRIORIDADE' :
+                                    ticket.priority === 'medium' ? 'MÉDIA PRIORIDADE' : 'BAIXA PRIORIDADE';
+                
+                const openDate = new Date(ticket.openDate);
+                const closeDate = ticket.closeDate ? new Date(ticket.closeDate) : null;
+                const daysOpen = closeDate ? 
+                    Math.floor((closeDate - openDate) / (1000 * 60 * 60 * 24)) :
+                    Math.floor((new Date() - openDate) / (1000 * 60 * 60 * 24));
+                
+                div.innerHTML = `
+                    ${currentUser && currentUser.role === 'admin' ? `
+                    <div class="action-buttons admin-only">
+                        <button class="edit-btn" onclick="openTicketModal(${ticket.id})" title="Editar">✏️</button>
+                        <button class="delete-btn" onclick="deleteTicket(${ticket.id})" title="Excluir">×</button>
+                    </div>
+                    ` : ''}
+                    <div style="margin-bottom: 10px;">
+                        <span class="client-badge">${ticket.client}</span>
+                    </div>
+                    <div class="ticket-header">
+                        <span class="ticket-name">${ticket.name}</span>
+                        ${ticket.phone ? `<span class="ticket-phone">${ticket.phone}</span>` : ''}
+                    </div>
+                    <div class="ticket-issue">${ticket.issue}</div>
+                    <span class="priority-badge ${priorityClass}">${priorityText}</span>
+                    <div class="date-info">
+                        <span>📅 Aberto: ${openDate.toLocaleDateString('pt-BR')}</span>
+                        ${closeDate ? `<span>✅ Fechado: ${closeDate.toLocaleDateString('pt-BR')}</span>` : ''}
+                        <span>⏱️ ${daysOpen} ${daysOpen === 1 ? 'dia' : 'dias'}</span>
+                    </div>
+                    ${currentUser && currentUser.role === 'admin' ? `
+                    <div class="ticket-actions admin-only">
+                        ${ticket.status === 'open' ? 
+                            `<button class="status-btn close" onclick="closeTicket(${ticket.id})">✓ Fechar Chamado</button>` :
+                            `<button class="status-btn reopen" onclick="reopenTicket(${ticket.id})">↻ Reabrir</button>`
+                        }
+                    </div>
+                    ` : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('stat-melhorias').textContent = improvements.length;
+            
+            const openTickets = tickets.filter(t => t.status === 'open');
+            const closedTickets = tickets.filter(t => t.status === 'closed');
+            const criticalTickets = tickets.filter(t => t.priority === 'critical' && t.status === 'open');
+            
+            document.getElementById('stat-chamados-abertos').textContent = openTickets.length;
+            document.getElementById('stat-criticos').textContent = criticalTickets.length;
+            document.getElementById('stat-fechados').textContent = closedTickets.length;
+            document.getElementById('stat-usuarios').textContent = Object.keys(users).length;
+            
+            document.getElementById('count-all').textContent = tickets.length;
+            document.getElementById('count-open').textContent = openTickets.length;
+            document.getElementById('count-critical').textContent = criticalTickets.length;
+            document.getElementById('count-closed').textContent = closedTickets.length;
+        }
+
+        function updateLastUpdate() {
+            const now = new Date();
+            const formatted = now.toLocaleString('pt-BR');
+            document.getElementById('last-update').textContent = formatted;
+        }
+
+        // Filter Functions
+        function filterTickets(type) {
+            currentFilter = type;
+            const tabs = document.querySelectorAll('.filter-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            renderTickets();
+        }
+
+        // Charts Functions
+        function renderCharts() {
+            renderClientChart();
+            renderResolutionChart();
+            renderStatusChart();
+            renderPriorityChart();
+        }
+
+        function renderClientChart() {
+            const ctx = document.getElementById('clientChart');
+            
+            // Count tickets by client
+            const clientCounts = {};
+            tickets.forEach(ticket => {
+                clientCounts[ticket.client] = (clientCounts[ticket.client] || 0) + 1;
+            });
+            
+            const sortedClients = Object.entries(clientCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            
+            if (clientChart) clientChart.destroy();
+            
+            clientChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedClients.map(c => c[0]),
+                    datasets: [{
+                        label: 'Número de Chamados',
+                        data: sortedClients.map(c => c[1]),
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderResolutionChart() {
+            const ctx = document.getElementById('resolutionChart');
+            
+            // Calculate average resolution time by client
+            const clientResolution = {};
+            tickets.filter(t => t.status === 'closed' && t.closeDate).forEach(ticket => {
+                const days = Math.floor((new Date(ticket.closeDate) - new Date(ticket.openDate)) / (1000 * 60 * 60 * 24));
+                if (!clientResolution[ticket.client]) {
+                    clientResolution[ticket.client] = { total: 0, count: 0 };
+                }
+                clientResolution[ticket.client].total += days;
+                clientResolution[ticket.client].count += 1;
+            });
+            
+            const avgResolution = Object.entries(clientResolution)
+                .map(([client, data]) => [client, Math.round(data.total / data.count)])
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            
+            if (resolutionChart) resolutionChart.destroy();
+            
+            resolutionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: avgResolution.map(c => c[0]),
+                    datasets: [{
+                        label: 'Dias Médios',
+                        data: avgResolution.map(c => c[1]),
+                        backgroundColor: 'rgba(240, 147, 251, 0.8)',
+                        borderColor: 'rgba(240, 147, 251, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStatusChart() {
+            const ctx = document.getElementById('statusChart');
+            
+            const openCount = tickets.filter(t => t.status === 'open').length;
+            const closedCount = tickets.filter(t => t.status === 'closed').length;
+            
+            if (statusChart) statusChart.destroy();
+            
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Abertos', 'Fechados'],
+                    datasets: [{
+                        data: [openCount, closedCount],
+                        backgroundColor: [
+                            'rgba(245, 87, 108, 0.8)',
+                            'rgba(72, 187, 120, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(245, 87, 108, 1)',
+                            'rgba(72, 187, 120, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderPriorityChart() {
+            const ctx = document.getElementById('priorityChart');
+            
+            const criticalCount = tickets.filter(t => t.priority === 'critical').length;
+            const mediumCount = tickets.filter(t => t.priority === 'medium').length;
+            const lowCount = tickets.filter(t => t.priority === 'low').length;
+            
+            if (priorityChart) priorityChart.destroy();
+            
+            priorityChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Alta', 'Média', 'Baixa'],
+                    datasets: [{
+                        data: [criticalCount, mediumCount, lowCount],
+                        backgroundColor: [
+                            'rgba(252, 129, 129, 0.8)',
+                            'rgba(237, 137, 54, 0.8)',
+                            'rgba(72, 187, 120, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(252, 129, 129, 1)',
+                            'rgba(237, 137, 54, 1)',
+                            'rgba(72, 187, 120, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+</html>

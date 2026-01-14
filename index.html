@@ -1112,6 +1112,14 @@
                         <option value="low">Baixa</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Data de Abertura</label>
+                    <input type="date" id="ticket-open-date" required>
+                </div>
+                <div class="form-group" id="close-date-group" style="display: none;">
+                    <label>Data de Fechamento</label>
+                    <input type="date" id="ticket-close-date">
+                </div>
                 <button type="submit" class="submit-btn" id="ticketSubmitBtn">Adicionar Chamado</button>
             </form>
         </div>
@@ -1559,6 +1567,7 @@
             if (currentUser.role !== 'admin') return;
             
             editingTicketId = id;
+            const closeDateGroup = document.getElementById('close-date-group');
             
             if (id) {
                 const ticket = tickets.find(t => t.id === id);
@@ -1571,11 +1580,28 @@
                     document.getElementById('ticket-phone').value = ticket.phone;
                     document.getElementById('ticket-issue').value = ticket.issue;
                     document.getElementById('ticket-priority').value = ticket.priority;
+                    
+                    // Set dates
+                    const openDate = new Date(ticket.openDate);
+                    document.getElementById('ticket-open-date').value = openDate.toISOString().split('T')[0];
+                    
+                    if (ticket.status === 'closed' && ticket.closeDate) {
+                        closeDateGroup.style.display = 'block';
+                        const closeDate = new Date(ticket.closeDate);
+                        document.getElementById('ticket-close-date').value = closeDate.toISOString().split('T')[0];
+                    } else {
+                        closeDateGroup.style.display = 'none';
+                        document.getElementById('ticket-close-date').value = '';
+                    }
                 }
             } else {
                 document.getElementById('ticketModalTitle').textContent = '🎫 Novo Chamado';
                 document.getElementById('ticketSubmitBtn').textContent = 'Adicionar Chamado';
                 document.getElementById('ticketForm').reset();
+                closeDateGroup.style.display = 'none';
+                // Set today's date as default
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('ticket-open-date').value = today;
             }
             
             document.getElementById('ticketModal').style.display = 'block';
@@ -1597,6 +1623,8 @@
             const phone = document.getElementById('ticket-phone').value;
             const issue = document.getElementById('ticket-issue').value;
             const priority = document.getElementById('ticket-priority').value;
+            const openDate = document.getElementById('ticket-open-date').value;
+            const closeDate = document.getElementById('ticket-close-date').value;
             
             if (editingTicketId) {
                 // Edit existing
@@ -1607,6 +1635,11 @@
                     ticket.phone = phone;
                     ticket.issue = issue;
                     ticket.priority = priority;
+                    ticket.openDate = new Date(openDate).toISOString();
+                    if (closeDate) {
+                        ticket.closeDate = new Date(closeDate).toISOString();
+                        ticket.status = 'closed';
+                    }
                 }
             } else {
                 // Add new
@@ -1618,7 +1651,7 @@
                     issue: issue,
                     priority: priority,
                     status: 'open',
-                    openDate: new Date().toISOString(),
+                    openDate: new Date(openDate).toISOString(),
                     closeDate: null
                 };
                 tickets.push(newTicket);
@@ -1646,8 +1679,6 @@
         }
 
         function closeTicket(id) {
-            if (currentUser.role !== 'admin') return;
-            
             const ticket = tickets.find(t => t.id === id);
             if (ticket) {
                 ticket.status = 'closed';
@@ -1661,8 +1692,6 @@
         }
 
         function reopenTicket(id) {
-            if (currentUser.role !== 'admin') return;
-            
             const ticket = tickets.find(t => t.id === id);
             if (ticket) {
                 ticket.status = 'open';
@@ -1733,14 +1762,12 @@
                         ${closeDate ? `<span>✅ Fechado: ${closeDate.toLocaleDateString('pt-BR')}</span>` : ''}
                         <span>⏱️ ${daysOpen} ${daysOpen === 1 ? 'dia' : 'dias'}</span>
                     </div>
-                    ${currentUser && currentUser.role === 'admin' ? `
-                    <div class="ticket-actions admin-only">
+                    <div class="ticket-actions" style="display: flex;">
                         ${ticket.status === 'open' ? 
                             `<button class="status-btn close" onclick="closeTicket(${ticket.id})">✓ Fechar Chamado</button>` :
                             `<button class="status-btn reopen" onclick="reopenTicket(${ticket.id})">↻ Reabrir</button>`
                         }
                     </div>
-                    ` : ''}
                 `;
                 container.appendChild(div);
             });

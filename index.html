@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Gestão de Melhorias & Chamados</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://kmcolguzweonspxkclce.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttY29sZ3V6d2VvbnNweGtjbGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1Njk5MTEsImV4cCI6MjA1MzE0NTkxMX0.CT9DYdHOTI0k8fJ2Jmk34w_MnktZ1DO';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('✅ Supabase conectado!', typeof supabase);
+    </script>
     <style>
         * {
             margin: 0;
@@ -1208,8 +1216,8 @@
         let clientChart, resolutionChart, statusChart, priorityChart;
 
         // Initialize
-        function init() {
-            loadFromLocalStorage();
+        async function init() {
+            await loadFromSupabase();
             checkSession();
         }
 
@@ -1301,14 +1309,67 @@
             }
         }
 
-        // Local Storage
-        function saveToLocalStorage() {
-            localStorage.setItem('dashboard_improvements', JSON.stringify(improvements));
-            localStorage.setItem('dashboard_tickets', JSON.stringify(tickets));
-            localStorage.setItem('dashboard_users', JSON.stringify(users));
+        // Supabase Storage Functions
+        async function saveToSupabase() {
+            try {
+                // Não precisa salvar - Supabase já salva automaticamente ao usar insert/update/delete
+                console.log('✅ Dados sincronizados com Supabase');
+            } catch (error) {
+                console.error('❌ Erro ao salvar:', error);
+            }
         }
 
-        function loadFromLocalStorage() {
+        async function loadFromSupabase() {
+            try {
+                // Carregar usuários
+                const { data: usersData, error: usersError } = await supabase
+                    .from('users')
+                    .select('*');
+                
+                if (usersError) throw usersError;
+                
+                // Converter array para objeto
+                users = {};
+                usersData.forEach(user => {
+                    users[user.username] = {
+                        password: user.password,
+                        role: user.role,
+                        name: user.name
+                    };
+                });
+
+                // Carregar melhorias
+                const { data: improvementsData, error: improvementsError } = await supabase
+                    .from('improvements')
+                    .select('*')
+                    .order('id', { ascending: true });
+                
+                if (improvementsError) throw improvementsError;
+                improvements = improvementsData || [];
+
+                // Carregar chamados
+                const { data: ticketsData, error: ticketsError } = await supabase
+                    .from('tickets')
+                    .select('*')
+                    .order('id', { ascending: true });
+                
+                if (ticketsError) throw ticketsError;
+                tickets = ticketsData || [];
+
+                console.log('✅ Dados carregados do Supabase:', {
+                    users: Object.keys(users).length,
+                    improvements: improvements.length,
+                    tickets: tickets.length
+                });
+
+            } catch (error) {
+                console.error('❌ Erro ao carregar do Supabase:', error);
+                // Se falhar, tenta carregar do LocalStorage como fallback
+                loadFromLocalStorageFallback();
+            }
+        }
+
+        function loadFromLocalStorageFallback() {
             const savedImprovements = localStorage.getItem('dashboard_improvements');
             const savedTickets = localStorage.getItem('dashboard_tickets');
             const savedUsers = localStorage.getItem('dashboard_users');
@@ -1317,7 +1378,6 @@
                 users = INITIAL_DATA.users;
                 improvements = INITIAL_DATA.improvements;
                 tickets = INITIAL_DATA.tickets;
-                saveToLocalStorage();
             } else {
                 users = JSON.parse(savedUsers);
                 improvements = savedImprovements ? JSON.parse(savedImprovements) : [];
@@ -1337,7 +1397,7 @@
             document.getElementById('newUserForm').reset();
         }
 
-        function addUser(event) {
+        async function addUser(event) {
             event.preventDefault();
             
             if (currentUser.role !== 'admin') return;
@@ -1352,17 +1412,35 @@
                 return;
             }
             
-            users[username] = {
-                password: password,
-                role: role,
-                name: name
-            };
-            
-            saveToLocalStorage();
-            renderUserList();
-            updateStats();
-            document.getElementById('newUserForm').reset();
-            alert('✅ Usuário cadastrado com sucesso!');
+            try {
+                // Inserir no Supabase
+                const { data, error } = await supabase
+                    .from('users')
+                    .insert([{
+                        username: username,
+                        password: password,
+                        name: name,
+                        role: role
+                    }])
+                    .select();
+
+                if (error) throw error;
+
+                // Atualizar localmente
+                users[username] = {
+                    password: password,
+                    role: role,
+                    name: name
+                };
+                
+                renderUserList();
+                updateStats();
+                document.getElementById('newUserForm').reset();
+                alert('✅ Usuário cadastrado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao adicionar usuário:', error);
+                alert('❌ Erro ao cadastrar usuário: ' + error.message);
+            }
         }
 
         function renderUserList() {
@@ -1387,7 +1465,7 @@
             });
         }
 
-        function deleteUser(username) {
+        async function deleteUser(username) {
             if (currentUser.role !== 'admin') return;
             if (username === 'admin') {
                 alert('❌ O usuário admin não pode ser excluído!');
@@ -1399,10 +1477,21 @@
             }
             
             if (confirm(`Tem certeza que deseja excluir o usuário ${users[username].name}?`)) {
-                delete users[username];
-                saveToLocalStorage();
-                renderUserList();
-                updateStats();
+                try {
+                    const { error } = await supabase
+                        .from('users')
+                        .delete()
+                        .eq('username', username);
+
+                    if (error) throw error;
+
+                    delete users[username];
+                    renderUserList();
+                    updateStats();
+                } catch (error) {
+                    console.error('Erro ao excluir usuário:', error);
+                    alert('❌ Erro ao excluir usuário: ' + error.message);
+                }
             }
         }
 
@@ -1479,7 +1568,7 @@
             renderClientTags('improvement');
         }
 
-        function saveImprovement(event) {
+        async function saveImprovement(event) {
             event.preventDefault();
             
             if (currentUser.role !== 'admin') return;
@@ -1493,41 +1582,73 @@
             const description = document.getElementById('improvement-description').value;
             const items = description.split('\n').filter(item => item.trim() !== '');
             
-            if (editingImprovementId) {
-                // Edit existing
-                const improvement = improvements.find(i => i.id === editingImprovementId);
-                if (improvement) {
-                    improvement.clients = [...improvementClients];
-                    improvement.title = title;
-                    improvement.items = items;
-                }
-            } else {
-                // Add new
-                const newImprovement = {
-                    id: improvements.length > 0 ? Math.max(...improvements.map(i => i.id)) + 1 : 1,
-                    clients: [...improvementClients],
-                    title: title,
-                    items: items
-                };
-                improvements.push(newImprovement);
-            }
-            
-            saveToLocalStorage();
-            renderImprovements();
-            updateStats();
-            updateLastUpdate();
-            closeImprovementModal();
-        }
+            try {
+                if (editingImprovementId) {
+                    // Editar existente
+                    const { error } = await supabase
+                        .from('improvements')
+                        .update({
+                            clients: improvementClients,
+                            title: title,
+                            items: items,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', editingImprovementId);
 
-        function deleteImprovement(id) {
-            if (currentUser.role !== 'admin') return;
-            
-            if (confirm('Tem certeza que deseja excluir esta melhoria?')) {
-                improvements = improvements.filter(i => i.id !== id);
-                saveToLocalStorage();
+                    if (error) throw error;
+
+                    const improvement = improvements.find(i => i.id === editingImprovementId);
+                    if (improvement) {
+                        improvement.clients = [...improvementClients];
+                        improvement.title = title;
+                        improvement.items = items;
+                    }
+                } else {
+                    // Adicionar novo
+                    const { data, error } = await supabase
+                        .from('improvements')
+                        .insert([{
+                            clients: improvementClients,
+                            title: title,
+                            items: items
+                        }])
+                        .select();
+
+                    if (error) throw error;
+
+                    improvements.push(data[0]);
+                }
+                
                 renderImprovements();
                 updateStats();
                 updateLastUpdate();
+                closeImprovementModal();
+            } catch (error) {
+                console.error('Erro ao salvar melhoria:', error);
+                alert('❌ Erro ao salvar melhoria: ' + error.message);
+            }
+        }
+
+        async function deleteImprovement(id) {
+            if (currentUser.role !== 'admin') return;
+            
+            if (confirm('Tem certeza que deseja excluir esta melhoria?')) {
+                try {
+                    const { error } = await supabase
+                        .from('improvements')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    improvements = improvements.filter(i => i.id !== id);
+                    renderImprovements();
+                    updateStats();
+                    updateLastUpdate();
+                } catch (error) {
+                    console.error('Erro ao excluir melhoria:', error);
+                    alert('❌ Erro ao excluir melhoria: ' + error.message);
+                }
             }
         }
 
@@ -1582,12 +1703,12 @@
                     document.getElementById('ticket-priority').value = ticket.priority;
                     
                     // Set dates
-                    const openDate = new Date(ticket.openDate);
+                    const openDate = new Date(ticket.open_date);
                     document.getElementById('ticket-open-date').value = openDate.toISOString().split('T')[0];
                     
-                    if (ticket.status === 'closed' && ticket.closeDate) {
+                    if (ticket.status === 'closed' && ticket.close_date) {
                         closeDateGroup.style.display = 'block';
-                        const closeDate = new Date(ticket.closeDate);
+                        const closeDate = new Date(ticket.close_date);
                         document.getElementById('ticket-close-date').value = closeDate.toISOString().split('T')[0];
                     } else {
                         closeDateGroup.style.display = 'none';
@@ -1613,7 +1734,7 @@
             editingTicketId = null;
         }
 
-        function saveTicket(event) {
+        async function saveTicket(event) {
             event.preventDefault();
             
             if (currentUser.role !== 'admin') return;
@@ -1626,81 +1747,155 @@
             const openDate = document.getElementById('ticket-open-date').value;
             const closeDate = document.getElementById('ticket-close-date').value;
             
-            if (editingTicketId) {
-                // Edit existing
-                const ticket = tickets.find(t => t.id === editingTicketId);
-                if (ticket) {
-                    ticket.client = client;
-                    ticket.name = name;
-                    ticket.phone = phone;
-                    ticket.issue = issue;
-                    ticket.priority = priority;
-                    ticket.openDate = new Date(openDate).toISOString();
+            try {
+                if (editingTicketId) {
+                    // Editar existente
+                    const updateData = {
+                        client: client,
+                        name: name,
+                        phone: phone,
+                        issue: issue,
+                        priority: priority,
+                        open_date: new Date(openDate).toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+
                     if (closeDate) {
-                        ticket.closeDate = new Date(closeDate).toISOString();
-                        ticket.status = 'closed';
+                        updateData.close_date = new Date(closeDate).toISOString();
+                        updateData.status = 'closed';
                     }
+
+                    const { error } = await supabase
+                        .from('tickets')
+                        .update(updateData)
+                        .eq('id', editingTicketId);
+
+                    if (error) throw error;
+
+                    const ticket = tickets.find(t => t.id === editingTicketId);
+                    if (ticket) {
+                        ticket.client = client;
+                        ticket.name = name;
+                        ticket.phone = phone;
+                        ticket.issue = issue;
+                        ticket.priority = priority;
+                        ticket.open_date = new Date(openDate).toISOString();
+                        if (closeDate) {
+                            ticket.close_date = new Date(closeDate).toISOString();
+                            ticket.status = 'closed';
+                        }
+                    }
+                } else {
+                    // Adicionar novo
+                    const { data, error } = await supabase
+                        .from('tickets')
+                        .insert([{
+                            client: client,
+                            name: name,
+                            phone: phone,
+                            issue: issue,
+                            priority: priority,
+                            status: 'open',
+                            open_date: new Date(openDate).toISOString(),
+                            close_date: null
+                        }])
+                        .select();
+
+                    if (error) throw error;
+
+                    tickets.push(data[0]);
                 }
-            } else {
-                // Add new
-                const newTicket = {
-                    id: tickets.length > 0 ? Math.max(...tickets.map(t => t.id)) + 1 : 1,
-                    client: client,
-                    name: name,
-                    phone: phone,
-                    issue: issue,
-                    priority: priority,
-                    status: 'open',
-                    openDate: new Date(openDate).toISOString(),
-                    closeDate: null
-                };
-                tickets.push(newTicket);
+                
+                renderTickets();
+                updateStats();
+                updateLastUpdate();
+                renderCharts();
+                closeTicketModal();
+            } catch (error) {
+                console.error('Erro ao salvar chamado:', error);
+                alert('❌ Erro ao salvar chamado: ' + error.message);
             }
-            
-            saveToLocalStorage();
-            renderTickets();
-            updateStats();
-            updateLastUpdate();
-            renderCharts();
-            closeTicketModal();
         }
 
-        function deleteTicket(id) {
+        async function deleteTicket(id) {
             if (currentUser.role !== 'admin') return;
             
             if (confirm('Tem certeza que deseja excluir este chamado?')) {
-                tickets = tickets.filter(t => t.id !== id);
-                saveToLocalStorage();
-                renderTickets();
-                updateStats();
-                updateLastUpdate();
-                renderCharts();
+                try {
+                    const { error } = await supabase
+                        .from('tickets')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    tickets = tickets.filter(t => t.id !== id);
+                    renderTickets();
+                    updateStats();
+                    updateLastUpdate();
+                    renderCharts();
+                } catch (error) {
+                    console.error('Erro ao excluir chamado:', error);
+                    alert('❌ Erro ao excluir chamado: ' + error.message);
+                }
             }
         }
 
-        function closeTicket(id) {
+        async function closeTicket(id) {
             const ticket = tickets.find(t => t.id === id);
             if (ticket) {
-                ticket.status = 'closed';
-                ticket.closeDate = new Date().toISOString();
-                saveToLocalStorage();
-                renderTickets();
-                updateStats();
-                updateLastUpdate();
-                renderCharts();
+                try {
+                    const closeDate = new Date().toISOString();
+                    
+                    const { error } = await supabase
+                        .from('tickets')
+                        .update({
+                            status: 'closed',
+                            close_date: closeDate,
+                            updated_at: closeDate
+                        })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    ticket.status = 'closed';
+                    ticket.close_date = closeDate;
+                    renderTickets();
+                    updateStats();
+                    updateLastUpdate();
+                    renderCharts();
+                } catch (error) {
+                    console.error('Erro ao fechar chamado:', error);
+                    alert('❌ Erro ao fechar chamado: ' + error.message);
+                }
             }
         }
 
-        function reopenTicket(id) {
+        async function reopenTicket(id) {
             const ticket = tickets.find(t => t.id === id);
             if (ticket) {
-                ticket.status = 'open';
-                ticket.closeDate = null;
-                saveToLocalStorage();
-                renderTickets();
-                updateStats();
-                updateLastUpdate();
-                renderCharts();
+                try {
+                    const { error } = await supabase
+                        .from('tickets')
+                        .update({
+                            status: 'open',
+                            close_date: null,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    ticket.status = 'open';
+                    ticket.close_date = null;
+                    renderTickets();
+                    updateStats();
+                    updateLastUpdate();
+                    renderCharts();
+                } catch (error) {
+                    console.error('Erro ao reabrir chamado:', error);
+                    alert('❌ Erro ao reabrir chamado: ' + error.message);
+                }
             }
         }
 
@@ -1735,8 +1930,8 @@
                                     ticket.priority === 'critical' ? 'ALTA PRIORIDADE' :
                                     ticket.priority === 'medium' ? 'MÉDIA PRIORIDADE' : 'BAIXA PRIORIDADE';
                 
-                const openDate = new Date(ticket.openDate);
-                const closeDate = ticket.closeDate ? new Date(ticket.closeDate) : null;
+                const openDate = new Date(ticket.open_date);
+                const closeDate = ticket.close_date ? new Date(ticket.close_date) : null;
                 const daysOpen = closeDate ? 
                     Math.floor((closeDate - openDate) / (1000 * 60 * 60 * 24)) :
                     Math.floor((new Date() - openDate) / (1000 * 60 * 60 * 24));
@@ -1866,8 +2061,8 @@
             
             // Calculate average resolution time by client
             const clientResolution = {};
-            tickets.filter(t => t.status === 'closed' && t.closeDate).forEach(ticket => {
-                const days = Math.floor((new Date(ticket.closeDate) - new Date(ticket.openDate)) / (1000 * 60 * 60 * 24));
+            tickets.filter(t => t.status === 'closed' && t.close_date).forEach(ticket => {
+                const days = Math.floor((new Date(ticket.close_date) - new Date(ticket.open_date)) / (1000 * 60 * 60 * 24));
                 if (!clientResolution[ticket.client]) {
                     clientResolution[ticket.client] = { total: 0, count: 0 };
                 }

@@ -1633,7 +1633,13 @@
                 closeImprovementModal();
             } catch (error) {
                 console.error('Erro ao salvar melhoria:', error);
-                alert('❌ Erro ao salvar melhoria: ' + error.message);
+                console.error('Detalhes do erro:', {
+                    message: error.message,
+                    hint: error.hint,
+                    details: error.details,
+                    code: error.code
+                });
+                alert('❌ Erro ao salvar melhoria: ' + (error.message || 'Erro desconhecido'));
             }
         }
 
@@ -1977,28 +1983,45 @@
         }
 
         function updateStats() {
-            document.getElementById('stat-melhorias').textContent = improvements.length;
+            const statMelhorias = document.getElementById('stat-melhorias');
+            if (statMelhorias) statMelhorias.textContent = improvements.length;
             
             const openTickets = tickets.filter(t => t.status === 'open');
             const closedTickets = tickets.filter(t => t.status === 'closed');
             const criticalTickets = tickets.filter(t => t.priority === 'critical' && t.status === 'open');
             
-            document.getElementById('stat-chamados-abertos').textContent = openTickets.length;
-            document.getElementById('stat-criticos').textContent = criticalTickets.length;
-            document.getElementById('stat-fechados').textContent = closedTickets.length;
-            document.getElementById('stat-usuarios').textContent = Object.keys(users).length;
+            const statAbertos = document.getElementById('stat-chamados-abertos');
+            if (statAbertos) statAbertos.textContent = openTickets.length;
             
-            document.getElementById('count-all').textContent = tickets.length;
-            document.getElementById('count-open').textContent = openTickets.length;
-            document.getElementById('count-critical').textContent = criticalTickets.length;
-            document.getElementById('count-closed').textContent = closedTickets.length;
+            const statCriticos = document.getElementById('stat-criticos');
+            if (statCriticos) statCriticos.textContent = criticalTickets.length;
+            
+            const statFechados = document.getElementById('stat-fechados');
+            if (statFechados) statFechados.textContent = closedTickets.length;
+            
+            const statUsuarios = document.getElementById('stat-usuarios');
+            if (statUsuarios) statUsuarios.textContent = Object.keys(users).length;
+            
+            const countAll = document.getElementById('count-all');
+            if (countAll) countAll.textContent = tickets.length;
+            
+            const countOpen = document.getElementById('count-open');
+            if (countOpen) countOpen.textContent = openTickets.length;
+            
+            const countCritical = document.getElementById('count-critical');
+            if (countCritical) countCritical.textContent = criticalTickets.length;
+            
+            const countClosed = document.getElementById('count-closed');
+            if (countClosed) countClosed.textContent = closedTickets.length;
         }
 
         function updateLastUpdate() {
             const now = new Date();
             const formatted = now.toLocaleString('pt-BR');
-            document.getElementById('lastUpdate').textContent = 
-                `Desenvolvido por Vinicius Oliveira • Última atualização: ${formatted}`;
+            const element = document.getElementById('last-update');
+            if (element) {
+                element.textContent = formatted;
+            }
         }
 
         // Filter Functions

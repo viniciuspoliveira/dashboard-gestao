@@ -6,13 +6,6 @@
     <title>Dashboard - Gestão de Melhorias & Chamados</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Configuração do Supabase
-        const SUPABASE_URL = 'https://kmcolguzweonspxkclce.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttY29sZ3V6d2VvbnNweGtjbGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1Njk5MTEsImV4cCI6MjA1MzE0NTkxMX0.CT9DYdHOTI0k8fJ2Jmk34w_MnktZ1DO';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('✅ Supabase conectado!', typeof supabase);
-    </script>
     <style>
         * {
             margin: 0;
@@ -1201,6 +1194,19 @@
                 }
             ]
         };
+
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://kmcolguzweonspxkclce.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttY29sZ3V6d2VvbnNweGtjbGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1Njk5MTEsImV4cCI6MjA1MzE0NTkxMX0.CT9DYdHOTI0k8fJ2Jmk34w_MnktZ1DO';
+        
+        // Aguarda o Supabase carregar
+        let supabase;
+        if (typeof window.supabase !== 'undefined') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('✅ Supabase conectado!', typeof supabase);
+        } else {
+            console.error('❌ Supabase não carregado!');
+        }
 
         // Application State
         let users = {};
